@@ -1,11 +1,15 @@
 class HistoriesController < ApplicationController
   before_action :set_history, only: [:show, :edit, :update, :destroy]
-
+  before_action :authenticate_user!, except: [:index]
   # GET /histories
   # GET /histories.json
   def index
     @histories = History.all
   end
+
+  def per_user
+    @histories = History.where(user_id: current_user)
+  end  
 
   # GET /histories/1
   # GET /histories/1.json
@@ -19,12 +23,18 @@ class HistoriesController < ApplicationController
 
   # GET /histories/1/edit
   def edit
+    if (@history.user.id != current_user.id) && (current_user.admin == false) 
+      respond_to do |format|
+        format.html { redirect_to root_path, notice: 'No puedes editar una historia que no es tuya' }
+      end
+    end  
   end
 
   # POST /histories
   # POST /histories.json
   def create
     @history = History.new(history_params)
+    @history.user_id = current_user.id
 
     respond_to do |format|
       if @history.save
